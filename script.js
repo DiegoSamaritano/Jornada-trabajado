@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 5000);
     }
 
-    // DOM Controles de entrada (Sliders y selectores)
+    // DOM Controles de entrada
     const selectDia = document.getElementById('select-dia');
     const rangeIngresoHora = document.getElementById('range-ingreso-hora');
     const rangeIngresoMin = document.getElementById('range-ingreso-min');
@@ -27,8 +27,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const cardExtra = document.getElementById('card-extra');
     const btnDownloadTicket = document.getElementById('btn-download-ticket');
 
-    // --- Asignación Activa de Listeners (Compatibles con PC y Móvil) ---
-    // Usamos 'input' para que cambie en tiempo real mientras arrastras en el celular
+    cargarPersistencia();
+    
+    // Asignación de Listeners para actualización inmediata
     if (selectDia) selectDia.addEventListener('change', calcularTodo);
     if (rangeIngresoHora) rangeIngresoHora.addEventListener('input', calcularTodo);
     if (rangeIngresoMin) rangeIngresoMin.addEventListener('input', calcularTodo);
@@ -36,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (rangeSalidaMin) rangeSalidaMin.addEventListener('input', calcularTodo);
     if (detallesDia) detallesDia.addEventListener('input', calcularTodo);
 
-    // Controles del botón de Almuerzo (+ y -)
+    // Controles de Almuerzo
     const btnMinus = document.getElementById('btn-lunch-minus');
     const btnPlus = document.getElementById('btn-lunch-plus');
 
@@ -60,16 +61,14 @@ document.addEventListener('DOMContentLoaded', () => {
         btnDownloadTicket.addEventListener('click', exportarComprobanteImagen);
     }
 
-    // --- Lógica Matemática Central ---
+    // --- Lógica de cálculo ---
     function calcularTodo() {
-        // Asegurar que existan los datos antes de operar
         if (!rangeIngresoHora || !rangeIngresoMin || !rangeSalidaHora || !rangeSalidaMin || !inputAlmuerzo) return;
 
         const minIngreso = (parseInt(rangeIngresoHora.value) * 60) + parseInt(rangeIngresoMin.value);
         const minSalida = (parseInt(rangeSalidaHora.value) * 60) + parseInt(rangeSalidaMin.value);
         const minAlmuerzo = parseInt(inputAlmuerzo.value);
 
-        // 1. Actualizar textos dinámicos arriba de las barras
         if (valIngreso) valIngreso.textContent = formatMinutesTo12H(minIngreso);
         if (valSalida) valSalida.textContent = formatMinutesTo12H(minSalida);
         if (valAlmuerzo) {
@@ -78,22 +77,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 : `${minAlmuerzo} min`;
         }
 
-        // 2. Calcular tiempos netos
         let tiempoEfectivo = (minSalida - minIngreso) - minAlmuerzo;
         if (tiempoEfectivo < 0) tiempoEfectivo = 0;
 
-        const JORNADA_BASE = 8 * 60; // 8 horas en minutos
+        const JORNADA_BASE = 8 * 60; 
         let horasExtra = 0;
 
         if (tiempoEfectivo > JORNADA_BASE) {
             horasExtra = tiempoEfectivo - JORNADA_BASE;
         }
 
-        // 3. Mostrar resultados en las tarjetas métricas
         if (resTrabajado) resTrabajado.textContent = formatMinToOutput(tiempoEfectivo);
         if (resExtra) resExtra.textContent = formatMinToOutput(horasExtra);
 
-        // Encender tarjeta de horas extras si aplica
         if (cardExtra) {
             if (horasExtra > 0) {
                 cardExtra.classList.add('active');
@@ -102,14 +98,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Ajustar barra de progreso visual
         if (progressFill) {
             const porcentajeProgreso = Math.min(100, (tiempoEfectivo / JORNADA_BASE) * 100);
             progressFill.style.width = `${porcentajeProgreso}%`;
             progressFill.style.backgroundColor = tiempoEfectivo > JORNADA_BASE ? '#10b981' : '#3b82f6';
         }
 
-        // 4. Guardar copia local automática
         localStorage.setItem('devtime_state', JSON.stringify({
             dia: selectDia ? selectDia.value : 'Lunes',
             ingresoHora: rangeIngresoHora.value,
@@ -121,7 +115,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }));
     }
 
-    // Convertidores auxiliares de tiempo
     function formatMinutesTo12H(totalMinutes) {
         let hours = Math.floor(totalMinutes / 60);
         const minutes = totalMinutes % 60;
@@ -137,7 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`;
     }
 
-    // --- Generador del Ticket en Imagen ---
+    // --- Generador de Ticket en Imagen ---
     function exportarComprobanteImagen() {
         const canvas = document.createElement('canvas');
         canvas.width = 500;
@@ -208,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.fillText(txtExtra, 220, 405);
 
         ctx.strokeStyle = '#2a2d42';
-        ctx.beginPath(); ctx.moveTo(35, 435); ctx.lineTo(465, 435); stroke();
+        ctx.beginPath(); ctx.moveTo(35, 435); ctx.lineTo(465, 435); ctx.stroke(); // Corregido el bug del stroke
 
         ctx.fillStyle = '#f0f2f5';
         ctx.font = 'bold 14px sans-serif';
@@ -240,7 +233,6 @@ document.addEventListener('DOMContentLoaded', () => {
         disparadorDescarga.click();
     }
 
-    // Cargar datos previos guardados
     function cargarPersistencia() {
         const estadoGuardado = localStorage.getItem('devtime_state');
         if (estadoGuardado) {
