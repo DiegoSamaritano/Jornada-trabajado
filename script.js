@@ -1,121 +1,127 @@
 document.addEventListener('DOMContentLoaded', () => {
     
-    // --- Control de la Intro (Modificado exactamente a 5000ms / 5 Segundos) ---
+    // --- Control de la Intro (Duración exacta: 5 segundos) ---
     const introScreen = document.getElementById('intro-screen');
-    setTimeout(() => {
-        introScreen.classList.add('fade-out');
-    }, 5000);
+    if (introScreen) {
+        setTimeout(() => {
+            introScreen.classList.add('fade-out');
+        }, 5000);
+    }
 
-    // DOM Controles Deslizantes Divididos
+    // DOM Controles de entrada (Sliders y selectores)
     const selectDia = document.getElementById('select-dia');
     const rangeIngresoHora = document.getElementById('range-ingreso-hora');
     const rangeIngresoMin = document.getElementById('range-ingreso-min');
     const rangeSalidaHora = document.getElementById('range-salida-hora');
     const rangeSalidaMin = document.getElementById('range-salida-min');
-    
     const inputAlmuerzo = document.getElementById('input-almuerzo');
     const detallesDia = document.getElementById('detalles-dia');
 
-    // DOM Elementos de Respuesta
+    // DOM Elementos de respuesta en pantalla
     const valIngreso = document.getElementById('val-ingreso');
     const valSalida = document.getElementById('val-salida');
     const valAlmuerzo = document.getElementById('val-almuerzo');
-
     const resTrabajado = document.getElementById('res-trabajado');
     const resExtra = document.getElementById('res-extra');
     const progressFill = document.getElementById('progress-fill');
     const cardExtra = document.getElementById('card-extra');
-    const notePreviewArea = document.getElementById('note-preview-area');
-    const resNota = document.getElementById('res-nota');
     const btnDownloadTicket = document.getElementById('btn-download-ticket');
 
-    // Inicializar persistencia de datos previos
-    cargarPersistencia();
-    
-    // Asignación de Listeners Reactivos
-    selectDia.addEventListener('change', calcularTodo);
-    rangeIngresoHora.addEventListener('input', calcularTodo);
-    rangeIngresoMin.addEventListener('input', calcularTodo);
-    rangeSalidaHora.addEventListener('input', calcularTodo);
-    rangeSalidaMin.addEventListener('input', calcularTodo);
-    detallesDia.addEventListener('input', calcularTodo);
+    // --- Asignación Activa de Listeners (Compatibles con PC y Móvil) ---
+    // Usamos 'input' para que cambie en tiempo real mientras arrastras en el celular
+    if (selectDia) selectDia.addEventListener('change', calcularTodo);
+    if (rangeIngresoHora) rangeIngresoHora.addEventListener('input', calcularTodo);
+    if (rangeIngresoMin) rangeIngresoMin.addEventListener('input', calcularTodo);
+    if (rangeSalidaHora) rangeSalidaHora.addEventListener('input', calcularTodo);
+    if (rangeSalidaMin) rangeSalidaMin.addEventListener('input', calcularTodo);
+    if (detallesDia) detallesDia.addEventListener('input', calcularTodo);
 
-    // Controles Stepper (Almuerzo)
-    document.getElementById('btn-lunch-minus').addEventListener('click', () => {
-        let val = Math.max(0, parseInt(inputAlmuerzo.value) - 15);
-        inputAlmuerzo.value = val;
-        calcularTodo();
-    });
+    // Controles del botón de Almuerzo (+ y -)
+    const btnMinus = document.getElementById('btn-lunch-minus');
+    const btnPlus = document.getElementById('btn-lunch-plus');
 
-    document.getElementById('btn-lunch-plus').addEventListener('click', () => {
-        let val = Math.min(240, parseInt(inputAlmuerzo.value) + 15);
-        inputAlmuerzo.value = val;
-        calcularTodo();
-    });
+    if (btnMinus && inputAlmuerzo) {
+        btnMinus.addEventListener('click', () => {
+            let val = Math.max(0, parseInt(inputAlmuerzo.value) - 15);
+            inputAlmuerzo.value = val;
+            calcularTodo();
+        });
+    }
 
-    // Evento de exportación de imagen
-    btnDownloadTicket.addEventListener('click', exportarComprobanteImagen);
+    if (btnPlus && inputAlmuerzo) {
+        btnPlus.addEventListener('click', () => {
+            let val = Math.min(240, parseInt(inputAlmuerzo.value) + 15);
+            inputAlmuerzo.value = val;
+            calcularTodo();
+        });
+    }
 
-    // --- Lógica de Procesamiento Central ---
+    if (btnDownloadTicket) {
+        btnDownloadTicket.addEventListener('click', exportarComprobanteImagen);
+    }
+
+    // --- Lógica Matemática Central ---
     function calcularTodo() {
+        // Asegurar que existan los datos antes de operar
+        if (!rangeIngresoHora || !rangeIngresoMin || !rangeSalidaHora || !rangeSalidaMin || !inputAlmuerzo) return;
+
         const minIngreso = (parseInt(rangeIngresoHora.value) * 60) + parseInt(rangeIngresoMin.value);
         const minSalida = (parseInt(rangeSalidaHora.value) * 60) + parseInt(rangeSalidaMin.value);
         const minAlmuerzo = parseInt(inputAlmuerzo.value);
 
-        // 1. Mostrar etiquetas visuales formateadas
-        valIngreso.textContent = formatMinutesTo12H(minIngreso);
-        valSalida.textContent = formatMinutesTo12H(minSalida);
-        valAlmuerzo.textContent = minAlmuerzo >= 60 
-            ? `${(minAlmuerzo/60).toFixed(1).replace('.0', '')} hrs` 
-            : `${minAlmuerzo} min`;
+        // 1. Actualizar textos dinámicos arriba de las barras
+        if (valIngreso) valIngreso.textContent = formatMinutesTo12H(minIngreso);
+        if (valSalida) valSalida.textContent = formatMinutesTo12H(minSalida);
+        if (valAlmuerzo) {
+            valAlmuerzo.textContent = minAlmuerzo >= 60 
+                ? `${(minAlmuerzo/60).toFixed(1).replace('.0', '')} hrs` 
+                : `${minAlmuerzo} min`;
+        }
 
-        // 2. Operación de tiempo efectivo neto
+        // 2. Calcular tiempos netos
         let tiempoEfectivo = (minSalida - minIngreso) - minAlmuerzo;
         if (tiempoEfectivo < 0) tiempoEfectivo = 0;
 
-        const JORNADA_BASE = 8 * 60; 
+        const JORNADA_BASE = 8 * 60; // 8 horas en minutos
         let horasExtra = 0;
 
         if (tiempoEfectivo > JORNADA_BASE) {
             horasExtra = tiempoEfectivo - JORNADA_BASE;
         }
 
-        // 3. Renderizado de métricas en UI
-        resTrabajado.textContent = formatMinToOutput(tiempoEfectivo);
-        resExtra.textContent = formatMinToOutput(horasExtra);
+        // 3. Mostrar resultados en las tarjetas métricas
+        if (resTrabajado) resTrabajado.textContent = formatMinToOutput(tiempoEfectivo);
+        if (resExtra) resExtra.textContent = formatMinToOutput(horasExtra);
 
-        if (horasExtra > 0) {
-            cardExtra.classList.add('active');
-        } else {
-            cardExtra.classList.remove('active');
+        // Encender tarjeta de horas extras si aplica
+        if (cardExtra) {
+            if (horasExtra > 0) {
+                cardExtra.classList.add('active');
+            } else {
+                cardExtra.classList.remove('active');
+            }
         }
 
-        // Modificación dinámica de barra de progreso
-        const porcentajeProgreso = Math.min(100, (tiempoEfectivo / JORNADA_BASE) * 100);
-        progressFill.style.width = `${porcentajeProgreso}%`;
-        progressFill.style.backgroundColor = tiempoEfectivo > JORNADA_BASE ? '#10b981' : '#3b82f6';
-
-        // Gestión de cuadro de previsualización de notas
-        if (detallesDia.value.trim() !== '') {
-            resNota.textContent = detallesDia.value;
-            notePreviewArea.classList.remove('hidden');
-        } else {
-            notePreviewArea.classList.add('hidden');
+        // Ajustar barra de progreso visual
+        if (progressFill) {
+            const porcentajeProgreso = Math.min(100, (tiempoEfectivo / JORNADA_BASE) * 100);
+            progressFill.style.width = `${porcentajeProgreso}%`;
+            progressFill.style.backgroundColor = tiempoEfectivo > JORNADA_BASE ? '#10b981' : '#3b82f6';
         }
 
-        // 4. Sincronizar estado en LocalStorage
+        // 4. Guardar copia local automática
         localStorage.setItem('devtime_state', JSON.stringify({
-            dia: selectDia.value,
+            dia: selectDia ? selectDia.value : 'Lunes',
             ingresoHora: rangeIngresoHora.value,
             ingresoMin: rangeIngresoMin.value,
             salidaHora: rangeSalidaHora.value,
             salidaMin: rangeSalidaMin.value,
             almuerzo: minAlmuerzo,
-            nota: detallesDia.value
+            nota: detallesDia ? detallesDia.value : ''
         }));
     }
 
-    // Convertidor: Minutos directos -> Formato Reloj 12h (AM/PM)
+    // Convertidores auxiliares de tiempo
     function formatMinutesTo12H(totalMinutes) {
         let hours = Math.floor(totalMinutes / 60);
         const minutes = totalMinutes % 60;
@@ -124,108 +130,104 @@ document.addEventListener('DOMContentLoaded', () => {
         if (hours > 12) hours -= 12;
         if (hours === 0) hours = 12;
 
-        const strHours = String(hours).padStart(2, '0');
-        const strMinutes = String(minutes).padStart(2, '0');
-
-        return `${strHours}:${strMinutes} ${ampm}`;
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} ${ampm}`;
     }
 
-    // Convertidor: Minutos directos -> Texto legible ("7h 45m")
     function formatMinToOutput(totalMinutes) {
-        const hours = Math.floor(totalMinutes / 60);
-        const minutes = totalMinutes % 60;
-        return `${hours}h ${minutes}m`;
+        return `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`;
     }
 
-    // --- Motor Gráfico del Comprobante (Canvas HTML5) ---
+    // --- Generador del Ticket en Imagen ---
     function exportarComprobanteImagen() {
         const canvas = document.createElement('canvas');
-        canvas.width = 480;
-        canvas.height = 540;
+        canvas.width = 500;
+        canvas.height = 560;
         const ctx = canvas.getContext('2d');
+        const diaActual = selectDia ? selectDia.value : 'Lunes';
 
         ctx.fillStyle = '#1a1c2a';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         ctx.fillStyle = '#3b82f6';
-        ctx.fillRect(0, 0, canvas.width, 8);
+        ctx.fillRect(0, 0, canvas.width, 10);
 
         ctx.fillStyle = '#f0f2f5';
-        ctx.font = 'bold 20px system-ui, sans-serif';
-        ctx.fillText('⚡ COMPROBANTE DE JORNADA', 35, 50);
+        ctx.font = 'bold 22px sans-serif';
+        ctx.fillText('⚡ COMPROBANTE DE JORNADA', 35, 55);
 
         ctx.fillStyle = '#8a90a6';
-        ctx.font = '14px system-ui, sans-serif';
-        ctx.fillText(`Marleny`, 35, 85);
-        ctx.fillText(`Día Registrado: ${selectDia.value}`, 35, 108);
+        ctx.font = '15px sans-serif';
+        ctx.fillText(`Colaboradora: Marleny`, 35, 95);
+        ctx.fillText(`Día Registrado: ${diaActual}`, 35, 120);
 
         ctx.strokeStyle = '#2a2d42';
         ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(35, 135); ctx.lineTo(445, 135); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(35, 145); ctx.lineTo(465, 145); ctx.stroke();
 
         ctx.fillStyle = '#f0f2f5';
-        ctx.font = 'bold 15px system-ui, sans-serif';
-        ctx.fillText('Horarios Registrados', 35, 165);
+        ctx.font = 'bold 16px sans-serif';
+        ctx.fillText('Horarios Registrados', 35, 180);
 
-        ctx.font = '14px system-ui, sans-serif';
+        ctx.font = '15px sans-serif';
         ctx.fillStyle = '#8a90a6';
-        ctx.fillText('Entrada :', 35, 200);
+        ctx.fillText('Entrada (AM):', 35, 215);
         ctx.fillStyle = '#f0f2f5';
-        ctx.fillText(valIngreso.textContent, 170, 200);
-
-        ctx.fillStyle = '#8a90a6';
-        ctx.fillText('Salida :', 35, 230);
-        ctx.fillStyle = '#f0f2f5';
-        ctx.fillText(valSalida.textContent, 170, 230);
+        ctx.fillText(valIngreso ? valIngreso.textContent : '--', 190, 215);
 
         ctx.fillStyle = '#8a90a6';
-        ctx.fillText('Almuerzo:', 35, 260);
+        ctx.fillText('Salida (PM):', 35, 245);
         ctx.fillStyle = '#f0f2f5';
-        ctx.fillText(valAlmuerzo.textContent, 170, 260);
+        ctx.fillText(valSalida ? valSalida.textContent : '--', 190, 245);
 
-        ctx.beginPath(); ctx.moveTo(35, 290); ctx.lineTo(445, 290); ctx.stroke();
-
-        ctx.fillStyle = '#f0f2f5';
-        ctx.font = 'bold 15px system-ui, sans-serif';
-        ctx.fillText('Total de Horas', 35, 320);
-
-        ctx.font = '14px system-ui, sans-serif';
         ctx.fillStyle = '#8a90a6';
-        ctx.fillText('Horas de Trabajo:', 35, 355);
+        ctx.fillText('Almuerzo:', 35, 275);
+        ctx.fillStyle = '#f0f2f5';
+        ctx.fillText(valAlmuerzo ? valAlmuerzo.textContent : '--', 190, 275);
+
+        ctx.beginPath(); ctx.moveTo(35, 305); ctx.lineTo(465, 305); ctx.stroke();
+
+        ctx.fillStyle = '#f0f2f5';
+        ctx.font = 'bold 16px sans-serif';
+        ctx.fillText('Cómputo de Horas', 35, 340);
+
+        ctx.font = '15px sans-serif';
+        ctx.fillStyle = '#8a90a6';
+        ctx.fillText('Tiempo Neto Realizado:', 35, 375);
         ctx.fillStyle = '#3b82f6';
-        ctx.font = 'bold 15px system-ui, sans-serif';
-        ctx.fillText(resTrabajado.textContent, 210, 355);
+        ctx.font = 'bold 16px sans-serif';
+        ctx.fillText(resTrabajado ? resTrabajado.textContent : '--', 220, 375);
 
-        ctx.font = '14px system-ui, sans-serif';
+        ctx.font = '15px sans-serif';
         ctx.fillStyle = '#8a90a6';
-        ctx.fillText('Horas Extras:', 35, 385);
+        ctx.fillText('Horas Extras:', 35, 405);
         
-        const tieneExtra = parseInt(resExtra.textContent) > 0;
+        const txtExtra = resExtra ? resExtra.textContent : '0h 0m';
+        const tieneExtra = parseInt(txtExtra) > 0;
         ctx.fillStyle = tieneExtra ? '#10b981' : '#f0f2f5';
-        ctx.font = 'bold 15px system-ui, sans-serif';
-        ctx.fillText(resExtra.textContent, 210, 385);
+        ctx.font = 'bold 16px sans-serif';
+        ctx.fillText(txtExtra, 220, 405);
 
         ctx.strokeStyle = '#2a2d42';
-        ctx.beginPath(); ctx.moveTo(35, 415); ctx.lineTo(445, 415); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(35, 435); ctx.lineTo(465, 435); stroke();
 
         ctx.fillStyle = '#f0f2f5';
-        ctx.font = 'bold 13px system-ui, sans-serif';
-        ctx.fillText('Notas adicionales:', 35, 445);
+        ctx.font = 'bold 14px sans-serif';
+        ctx.fillText('Notas adicionales:', 35, 465);
 
-        ctx.font = 'italic 13px system-ui, sans-serif';
+        ctx.font = 'italic 14px sans-serif';
         ctx.fillStyle = '#8a90a6';
-        const txtNota = detallesDia.value.trim() !== '' ? detallesDia.value : 'Sin observaciones anotadas hoy.';
+        const txtNota = (detallesDia && detallesDia.value.trim() !== '') ? detallesDia.value : 'Sin observaciones anotadas hoy.';
         
         let lineaActual = '';
-        let coordY = 470;
+        let coordY = 490;
         const palabras = txtNota.split(' ');
         
         for (let i = 0; i < palabras.length; i++) {
             let lineaTentativa = lineaActual + palabras[i] + ' ';
-            if (ctx.measureText(lineaTentativa).width > 400 && i > 0) {
+            if (ctx.measureText(lineaTentativa).width > 410 && i > 0) {
                 ctx.fillText(lineaActual, 35, coordY);
                 lineaActual = palabras[i] + ' ';
-                coordY += 18;
+                coordY += 20;
             } else {
                 lineaActual = lineaTentativa;
             }
@@ -233,23 +235,23 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.fillText(lineaActual, 35, coordY);
 
         const disparadorDescarga = document.createElement('a');
-        disparadorDescarga.download = `Comprobante_Jornada_${selectDia.value}.png`;
+        disparadorDescarga.download = `Comprobante_Jornada_${diaActual}.png`;
         disparadorDescarga.href = canvas.toDataURL('image/png');
         disparadorDescarga.click();
     }
 
-    // Recuperar estados anteriores guardados localmente
+    // Cargar datos previos guardados
     function cargarPersistencia() {
         const estadoGuardado = localStorage.getItem('devtime_state');
         if (estadoGuardado) {
             const data = JSON.parse(estadoGuardado);
-            if (data.dia) selectDia.value = data.dia;
-            rangeIngresoHora.value = data.ingresoHora || 8;
-            rangeIngresoMin.value = data.ingresoMin || 0;
-            rangeSalidaHora.value = data.salidaHora || 17;
-            rangeSalidaMin.value = data.salidaMin || 0;
-            inputAlmuerzo.value = data.almuerzo || 60;
-            detallesDia.value = data.nota || '';
+            if (data.dia && selectDia) selectDia.value = data.dia;
+            if (rangeIngresoHora) rangeIngresoHora.value = data.ingresoHora || 8;
+            if (rangeIngresoMin) rangeIngresoMin.value = data.ingresoMin || 0;
+            if (rangeSalidaHora) rangeSalidaHora.value = data.salidaHora || 17;
+            if (rangeSalidaMin) rangeSalidaMin.value = data.salidaMin || 0;
+            if (inputAlmuerzo) inputAlmuerzo.value = data.almuerzo || 60;
+            if (detallesDia) detallesDia.value = data.nota || '';
         }
         calcularTodo();
     }
