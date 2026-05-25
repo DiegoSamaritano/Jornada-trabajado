@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevTime Tracker Pro</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="intro-screen" class="intro-overlay">
+        <div class="intro-content">
+            <div class="intro-logo">⚡</div>
+            <h2>¡BIENVENIDA MARLENY!</h2>
+            <p>Este es tu sistema de horarios trabajados por cada día de la semana.</p>
+            <div class="intro-progress">
+                <div class="intro-progress-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <h1>⚡ Jornada Laboral <span class="badge">Marleny</span></h1>
+            <p>Jornada estándar: <strong>8 hrs</strong></p>
+        </header>
+
+        <main class="dashboard-grid">
+            <section class="control-panel card">
+                <h2>📅 Registro Diario</h2>
+                
+                <div class="control-group">
+                    <label for="select-dia">📆 Día de la Semana</label>
+                    <select id="select-dia" class="select-styled">
+                        <option value="Lunes">Lunes</option>
+                        <option value="Martes">Martes</option>
+                        <option value="Miércoles">Miércoles</option>
+                        <option value="Jueves">Jueves</option>
+                        <option value="Viernes">Viernes</option>
+                        <option value="Sábado">Sábado</option>
+                        <option value="Domingo">Domingo</option>
+                    </select>
+                </div>
+
+                <div class="control-group split-time-card">
+                    <div class="control-header">
+                        <label>🌅 Hora de Ingreso</label>
+                        <span id="val-ingreso" class="time-display">08:00 AM</span>
+                    </div>
+                    <div class="sliders-split-row">
+                        <div class="slider-field">
+                            <span class="field-label">Hora</span>
+                            <input type="range" id="range-ingreso-hora" min="4" max="12" value="8" class="slider">
+                        </div>
+                        <div class="slider-field">
+                            <span class="field-label">Minuto</span>
+                            <input type="range" id="range-ingreso-min" min="0" max="59" value="0" class="slider">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-group split-time-card">
+                    <div class="control-header">
+                        <label>🌌 Hora de Salida</label>
+                        <span id="val-salida" class="time-display">05:00 PM</span>
+                    </div>
+                    <div class="sliders-split-row">
+                        <div class="slider-field">
+                            <span class="field-label">Hora</span>
+                            <input type="range" id="range-salida-hora" min="12" max="23" value="17" class="slider">
+                        </div>
+                        <div class="slider-field">
+                            <span class="field-label">Minuto</span>
+                            <input type="range" id="range-salida-min" min="0" max="59" value="0" class="slider">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <div class="control-header">
+                        <label>🍔 Tiempo de Almuerzo</label>
+                        <span id="val-almuerzo" class="time-display">1 Hora</span>
+                    </div>
+                    <div class="stepper">
+                        <button type="button" class="btn-step" id="btn-lunch-minus">−</button>
+                        <input type="text" id="input-almuerzo" value="60" readonly>
+                        <button type="button" class="btn-step" id="btn-lunch-plus">+</button>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label for="detalles-dia">📝 Notas del día (Opcional)</label>
+                    <textarea id="detalles-dia" rows="2" placeholder="Ingresar detalle pendiente en el dia"></textarea>
+                </div>
+            </section>
+
+            <section class="results-panel">
+                <div class="card status-card">
+                    <h3>Progreso de la Jornada</h3>
+                    <div class="progress-bar-container">
+                        <div id="progress-fill" class="progress-bar-fill"></div>
+                    </div>
+                </div>
+
+                <div class="metrics-container">
+                    <div class="card metric-card">
+                        <span class="metric-icon">💼</span>
+                        <span class="metric-title">Trabajado Neto</span>
+                        <span id="res-trabajado" class="metric-number">0h 0m</span>
+                    </div>
+
+                    <div class="card metric-card extra-hours" id="card-extra">
+                        <span class="metric-icon">🚀</span>
+                        <span class="metric-title">Horas Extra</span>
+                        <span id="res-extra" class="metric-number">0h 0m</span>
+                    </div>
+                </div>
+
+                <div class="card note-preview-card hidden" id="note-preview-area">
+                    <h4>Resumen guardado para hoy:</h4>
+                    <p id="res-nota"></p>
+                </div>
+
+                <button type="button" id="btn-download-ticket" class="btn-download">
+                    📥 Descargar Comprobante del Día
+                </button>
+            </section>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
